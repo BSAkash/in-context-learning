@@ -44,6 +44,7 @@ class Dataset(str, Enum):
     # Sentiment Analysis
     SST2 = 'sst2'
     YELP = 'yelp_polarity'
+    YOUTUBE = 'youtube'
     SST5 = 'sst5'
     ROTTEN_TOMATOES = 'rotten_tomatoes'
 
@@ -55,6 +56,10 @@ class Dataset(str, Enum):
 
     # Commonsense Reasoning
     CMSQA = 'cmsqa'
+    COPA = 'copa'
+    SWAG = 'swag'
+    HELLASWAG = 'hellaswag'
+    PIQA = 'piqa'
 
     # Summarization
     AGNEWS = 'agnews'
@@ -69,16 +74,20 @@ class Dataset(str, Enum):
 
     # CoT
     GSM8K = 'gsm8k'
-
+    
+    AESLC = 'aeslc'
+    DART = 'dart'
+    NL2BASH = 'nl2bash'
+    
 D = Dataset
 T = Task
 
 category2datasets = {
     T.SEMPARSE: [D.GEOQUERY, D.SMCALFLOW_CS, D.ATIS, D.OVERNIGHT, D.BREAK, D.MTOP, D.CFQ, D.COGS, D.SPIDER],
     T.NLI: [D.QNLI, D.MNLI, D.RTE, D.WANLI, D.XNLI, D.MEDNLI],
-    T.SENTIMENT: [D.SST2, D.YELP, D.SST5, D.ROTTEN_TOMATOES],
+    T.SENTIMENT: [D.SST2, D.YELP, D.SST5, D.ROTTEN_TOMATOES, D.YOUTUBE],
     T.PARAPHRASE: [D.MRPC, D.QQP, D.PAWS, D.PAWSX],
-    T.COMMONSENSE: [D.CMSQA],
+    T.COMMONSENSE: [D.CMSQA, D.COPA, D.SWAG, D.HELLASWAG, D.PIQA],
     T.SUMMARIZATION: [D.AGNEWS],
     T.COT: [D.GSM8K],
     T.RC: [D.BOOLQ, D.DROP],
@@ -128,6 +137,9 @@ class LLM(str, Enum):
     TURBO_JUNE = 'gpt-3.5-turbo-0613'
     GPT4 = 'gpt-4-0314'
     MAJORITY = 'majority'
+    
+    DOLLY3B = 'databricks/dolly-v2-3b'
+    DOLLY7B = 'databricks/dolly-v2-7b'
 
 openai_lms = [LLM.BABBAGE_002, LLM.DAVINCI_002, LLM.CODE_CUSHMAN_001, LLM.CODE_DAVINCI_002, LLM.TEXT_DAVINCI_002, LLM.TEXT_DAVINCI_003, LLM.TURBO, LLM.TURBO_JUNE, LLM.GPT4]
 chat_lms = [LLM.TURBO, LLM.TURBO_JUNE]
@@ -150,6 +162,9 @@ context_length_limit = {
     LLM.MISTRAL: 8192,
     LLM.ZEPHYR: 8192,
     LLM.MAJORITY: 100000,
+    
+    LLM.DOLLY3B: 2048,
+    LLM.DOLLY7B: 2048,
 }
 
 mwp_datasets = [D.GSM8K]

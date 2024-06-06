@@ -1,6 +1,7 @@
 import json
 import math
 import time
+
 import numpy as np
 import numpy.random as npr
 from contextlib import nullcontext
@@ -117,19 +118,23 @@ def eval(
     with Live(progress, refresh_per_second=1, console=logger.std_console) if not debug else nullcontext():
         for batch_i in progress.track(range(n_batch), description='Evaluating..') if not debug else range(n_batch):
             log(f"Batch {batch_i+1}/{n_batch}")
+            print("1. Select test batch..")
             test_batch = test_ds.select(np.arange(
                 batch_i * batch_size, min(n_test, (batch_i + 1) * batch_size)))
-
+            
             # Get few-shot prompts
+            print("2. Getting prompts..")
             is_turbo = params.lm_name in chat_lms
             prompts, demos_l = zip(*[
                 prompt_template.format(**ex,  is_turbo=is_turbo, return_demos=True)
                 for ex in test_batch])
-
+            
             # Complete prompts
+            print("3. Complete prompts..")
             llm_outputs = complete_prompts(params, llm, test_batch, prompts, sep, example_template)
-
+            
             # Evaluate prompts and completions
+            print("4. Evaluate prompts and completions..")
             for ex, prompt, demos, llm_output in zip(test_batch, prompts, demos_l, llm_outputs):
                 res = deepcopy(ex)
                 prompt_metrics = evaluate_prompt(
@@ -148,6 +153,9 @@ def eval(
                     log(f"[green]{res['prompt']}[/green][{comp_color}]{res['completion']}[/{comp_color}]")
                     log(f'Inputs: {ex}')
             log(str(agg_metrics.normalized))
+            # Rate limit
+            # time.sleep(30)
+            
     log(ex)
     log(prompt)
     icl_time = time.time() - beg

@@ -49,6 +49,10 @@ lm_args_d = {
         lm_name=LLM.MISTRAL, lm_type=P.HUGGINGFACE, do_sample=False, lm_batch_size=7,),
     'zephyr': dict(
         lm_name=LLM.ZEPHYR, lm_type=P.HUGGINGFACE, do_sample=False, lm_batch_size=7,),
+    'dolly3b': dict(
+        lm_name=LLM.DOLLY3B, lm_type=P.HUGGINGFACE, do_sample=False, lm_batch_size=7,),
+    'dolly7b': dict(
+        lm_name=LLM.DOLLY7B, lm_type=P.HUGGINGFACE, do_sample=False, lm_batch_size=7,),
 }
 
 dataset_args_d: dict[D, dict] = {

@@ -593,6 +593,35 @@ class Yelp(DataParams):
         T.selection_example_template = T.instructed_example_template
         return T
 
+# TODO: add my own dataset
+@attr.s(auto_attribs=True)
+class YouTube(DataParams):
+    dataset: D = D.YOUTUBE
+    task: T = T.SENTIMENT
+    train_split: str = 'train'
+    test_split: str = 'test'
+
+    def get_dataset(self, data_root: str = '../data', dataloaders_dir: str = 'data'):
+        # TODO parse json files with datasets lib
+        return load_dataset('../data/youtube')
+    
+    def get_templates(self) -> Templates:
+        T = Templates()
+        instruction = 'Your task is to classify YouTube videos as Harmful or Harmless based on their metadata.'
+        T.prefix_template = instruction if self.prefix else ''
+        
+        T.example_template = ClassificationTemplate(
+            choices = ["Harmful", "Harmless"],
+            get_target = lambda _choices, **kwargs: kwargs['label'],
+            # templates = 'Title: {Title}\nDescription: {Description}\nTranscript: {Transcript}\nClassification: {_target}')
+            templates = 'Title: {Title}\nClassification: {_target}')
+        
+        T.instructed_example_template = ClassificationTemplate(
+            choices = ["Harmful", "Harmless"],
+            get_target = lambda _choices, **kwargs: kwargs['label'],
+            templates='Review the following video metadata:\nTitle: {Title}\nIs the video above Harmful or Harmless?\nAnswer: {_target}')
+        T.selection_example_template = T.instructed_example_template
+        return T
 
 @attr.s(auto_attribs=True)
 class RottenTomatoes(DataParams):
@@ -923,7 +952,7 @@ class CMSQA(DataParams):
 # ---------------------------------------------------------------------------- #
 #                                 Summarization                                #
 # ---------------------------------------------------------------------------- #
-
+      
 @attr.s(auto_attribs=True)
 class AGNews(DataParams):
     dataset: D = D.AGNEWS
@@ -1142,7 +1171,7 @@ class GSM8K(DataParams):
 all_datasets = [
     GeoQuery, SMCalFlowCS, Atis, Overnight, Break, MTOP, CFQ, COGS, Spider,
     QNLI, MNLI, RTE, WANLI, XNLI, MedNLI,
-    SST2, SST5, Yelp, RottenTomatoes,
+    SST2, SST5, Yelp, RottenTomatoes,YouTube,
     MRPC, QQP, PAWS, PAWSX,
     COPA, HellaSwag, Swag, PIQA, CMSQA,
     AGNews,
@@ -1155,7 +1184,7 @@ not_supported = []
 
 ds2cls: dict[D, Type[DataParams]] = {ds_cls().dataset: ds_cls for ds_cls in all_datasets}
 # size mismatch w.r.t. https://www.semanticscholar.org/reader/ae22f7c57916562e2729a1a7f34298e4220b77a7: yelp, CommonGen, E2ENLG, DART, AESLC
-def test(
+def  test(
     ds_cls_l: list[Dataset] | Type[DataParams] | list[Type[DataParams]] = 'SMCALFLOW_CS;BREAK;MTOP',
     filter_long_instances: bool = True, rich_output: bool = True,
 ):

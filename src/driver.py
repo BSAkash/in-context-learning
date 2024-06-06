@@ -64,6 +64,13 @@ def get_selector(
     elif selector_type == ES.STRUCT:
         ex_selector = StructuralCoverageSelector.from_examples(**common_args, return_time=return_time)
     elif selector_type == ES.BERTSCORE:
+        # Use subset of candidates to avoid memory issues
+        sample_size = 100  # Adjust this number based on your needs
+        random_indices = np.random.choice(len(candidates), size=sample_size, replace=False)
+        sampled_candidates = candidates.select(random_indices)
+        print("candicates:", len(sampled_candidates))
+        common_args['examples'] = sampled_candidates
+
         ex_selector = BertScoreSelector.from_examples(**common_args, return_time=return_time, device=device)
     elif selector_type == ES.GIST_BERTSCORE:
         ex_selector = GistBertScoreSelector.from_examples(**common_args, return_time=return_time, device=device)

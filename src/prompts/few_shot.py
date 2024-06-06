@@ -114,19 +114,21 @@ class FewShotPromptTemplate2:
         if max_len != -1:
             # prune the demonstrations to make sure the prompt will fit in the context length limit
             if not self.subtract_gen_len:
+                # print("[LOG] max_len", max_len)
+                # print("[LOG] n_shots", n_shots)
                 while self.enc_len_fn(self.make_prompt(
                     prefix, example_strings[-n_shots:], test_example_string)
-                ) > max_len:
+                ) > max_len and n_shots > 1:
                     # example_strings = example_strings[1:]
                     n_shots -= 1
             else:
                 test_example_string_completed = ET.format(**kwargs)
                 while self.enc_len_fn(self.make_prompt(
                     prefix, example_strings[-n_shots:], test_example_string_completed)
-                ) > max_len:
+                ) > max_len and n_shots > 1:
                     # example_strings = example_strings[1:]
                     n_shots -= 1
-            # print(f'reduced examples from {len(examples)} to {len(example_strings)}')
+            print(f'reduced examples from {len(examples)} to {len(example_strings)}')
 
         if not is_turbo:
             prompt = self.make_prompt(prefix, example_strings[-n_shots:], test_example_string)
