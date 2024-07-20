@@ -128,7 +128,7 @@ class FewShotPromptTemplate2:
                 ) > max_len and n_shots > 1:
                     # example_strings = example_strings[1:]
                     n_shots -= 1
-            print(f'reduced examples from {len(examples)} to {len(example_strings)}')
+            # print(f'reduced examples from {len(examples)} to {len(example_strings)}')
 
         if not is_turbo:
             prompt = self.make_prompt(prefix, example_strings[-n_shots:], test_example_string)
