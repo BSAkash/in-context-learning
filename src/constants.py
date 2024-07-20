@@ -133,7 +133,7 @@ class LLM(str, Enum):
     CODE_DAVINCI_002 = 'code-davinci-002'
     TEXT_DAVINCI_002 = 'text-davinci-002'
     TEXT_DAVINCI_003 = 'text-davinci-003'
-    TURBO = 'gpt-3.5-turbo-0301'
+    TURBO = 'gpt-3.5-turbo'
     TURBO_JUNE = 'gpt-3.5-turbo-0613'
     GPT4 = 'gpt-4-0314'
     MAJORITY = 'majority'
@@ -149,7 +149,7 @@ context_length_limit = {
     LLM.CODE_DAVINCI_002: 8001,
     LLM.TEXT_DAVINCI_002: 4096,
     LLM.TEXT_DAVINCI_003: 4096,
-    LLM.TURBO: 4000,
+    LLM.TURBO: 16385,
     LLM.TURBO_JUNE: 4000,
     LLM.GPT4: 8192,
 
