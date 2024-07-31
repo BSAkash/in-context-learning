@@ -32,9 +32,13 @@ def get_enc_len_fn(lm: LLM):
         from transformers import AutoTokenizer
         tokenizer = AutoTokenizer.from_pretrained(lm.value, use_auth_token=True)
         enc_len_fn = lambda x: len(tokenizer.encode(x))
-    elif lm == LLM.LLAMA7B:
+    elif lm == LLM.LLAMA2_7B:
         from transformers import LlamaTokenizer
         tokenizer = LlamaTokenizer.from_pretrained(llama_path('7B'))
+        enc_len_fn = lambda x: len(tokenizer.encode(x))
+    elif lm == LLM.LLAMA3_8B:
+        from transformers import AutoTokenizer
+        tokenizer = AutoTokenizer.from_pretrained(lm.value, use_auth_token=True)
         enc_len_fn = lambda x: len(tokenizer.encode(x))
     elif lm == LLM.LLAMA13B:
         from transformers import LlamaTokenizer

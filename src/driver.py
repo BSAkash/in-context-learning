@@ -73,6 +73,79 @@ def get_selector(
         raise ValueError(f'Unknown selector type: {selector_type}')
     return ex_selector
 
+def standardize_selector(selector):
+    """Standardize selectors by converting lists of arrays to 2D arrays."""
+    if isinstance(selector.shot_scores_l, list):
+        selector.shot_scores_l = np.array(selector.shot_scores_l)
+    if isinstance(selector.shot_idxs_l, list):
+        selector.shot_idxs_l = np.array(selector.shot_idxs_l)
+    return selector
+
+def combine_selectors(harmful_selector, harmless_selector):
+    """Combine the harmful and harmless selectors."""
+    # Unpack the tuples if needed
+    sel_time = 0
+    if isinstance(harmful_selector, tuple):
+        harmful_selector, harmful_sel_time = harmful_selector
+        sel_time += harmful_sel_time
+    if isinstance(harmless_selector, tuple):
+        harmless_selector, harmless_sel_time = harmless_selector
+        sel_time += harmless_sel_time
+    
+    # Ensure both selectors are of the same type
+    if not isinstance(harmful_selector, type(harmless_selector)):
+        raise TypeError("Selectors must be of the same type to combine")
+
+    harmful_selector = standardize_selector(harmful_selector)
+    harmless_selector = standardize_selector(harmless_selector)
+
+    # Concatenate shot scores and indices from both selectors
+    combined_shot_scores_l = np.concatenate([
+        harmful_selector.shot_scores_l,
+        harmless_selector.shot_scores_l
+    ], axis=1)  # Ensure axis is set to concatenate along the correct dimension
+
+    combined_shot_idxs_l = np.concatenate([
+        harmful_selector.shot_idxs_l,
+        harmless_selector.shot_idxs_l + len(harmful_selector.demo_candidates)
+    ], axis=1)
+
+    # Sort combined scores and indices in descending order
+    sorted_indices = np.argsort(combined_shot_scores_l, axis=1)[:, ::-1]  # Descending order
+
+    # Apply sorting to scores and indices
+    sorted_scores = np.take_along_axis(combined_shot_scores_l, sorted_indices, axis=1)
+    sorted_idxs = np.take_along_axis(combined_shot_idxs_l, sorted_indices, axis=1)
+
+    # Combine datasets
+    from datasets import concatenate_datasets
+    combined_demo_candidates = concatenate_datasets([
+        harmful_selector.demo_candidates,
+        harmless_selector.demo_candidates
+    ])
+
+
+    # Create a combined selector object
+    combined_selector = deepcopy(harmless_selector)  # Start with one of the selectors
+    combined_selector.shot_scores_l = sorted_scores
+    combined_selector.shot_idxs_l = sorted_idxs
+    combined_selector.demo_candidates = combined_demo_candidates
+    combined_selector.query2idx = {**harmful_selector.query2idx, **harmless_selector.query2idx}
+    
+    # print('Combined selector: ', combined_selector)
+    # print(f"combined_score: {sorted_scores}")
+    # print(f"combined_indexes:{sorted_idxs}")
+
+    """ check the order logic of combined examples
+    for idx in combined_selector.shot_idxs_l:
+        example_dataset = combined_selector.demo_candidates.select(idx)
+        for idx, data in enumerate(example_dataset):
+            print(f"Example {idx +  1}:")
+            print(data)
+            print("-" * 40)
+    """
+    return combined_selector, sel_time if sel_time else combine_selectors
+
 def get_prompt_template(
     P: AllParams, train_ds: Dataset, test_ds: Dataset, candidates: Dataset,
     templates: Templates, max_new_tokens: int, logger: Logger, return_time=False,
@@ -95,17 +168,40 @@ def get_prompt_template(
         P = deepcopy(P)
         SP.n_shots = 50
 
+    harmful_candidates = candidates.filter(lambda example: example['label'] == 'Harmful')
+    harmless_candidates = candidates.filter(lambda example: example['label'] == 'Harmless')
+    half_shots = SP.n_shots // 2
+
     if SP.selector_type == ES.RANDOM:
-        fewshot_prompt = fewshot_prompt_fn(examples=list(train_ds.select(np.arange(SP.n_shots))))
+        if P.exp.balance:
+            harmful_examples = list(harmful_candidates.select(np.arange(SP.n_shots // 2)))
+            harmless_examples = list(harmless_candidates.select(np.arange(SP.n_shots // 2)))
+            examples = harmful_examples + harmless_examples
+            fewshot_prompt = fewshot_prompt_fn(examples=examples)
+        else:
+            fewshot_prompt = fewshot_prompt_fn(examples=list(train_ds.select(np.arange(SP.n_shots))))
         sel_time = 0
     else:
         ex_len_fn = lambda ex, **kwargs: enc_len_fn(templates.example_template.format(**ex, **kwargs))
         ex_template = templates.selection_example_template
-        ex_selector = get_selector(P, candidates, test_ds, ex_template, ex_len_fn, max_len, subtract_gen_len, return_time=return_time)
+        
+        if P.exp.balance:
+            P_half = deepcopy(P)
+            P_half.selector.n_shots = half_shots
+            harmful_selector = get_selector(P_half, harmful_candidates, test_ds, ex_template, ex_len_fn, max_len, subtract_gen_len, return_time=return_time)
+            harmless_selector = get_selector(P_half, harmless_candidates, test_ds, ex_template, ex_len_fn, max_len, subtract_gen_len, return_time=return_time)
+            # with open(f'selector_output/{P.selector.selector_type}_harmful_selector.txt', 'w') as f:
+            #     f.write(str(harmful_selector))
+            # with open(f'selector_output/{P.selector.selector_type}_harmless_selector.txt', 'w') as f:
+            #     f.write(str(harmless_selector))
+            ex_selector = combine_selectors(harmful_selector, harmless_selector)
+        else:
+            ex_selector = get_selector(P, candidates, test_ds, ex_template, ex_len_fn, max_len, subtract_gen_len, return_time=return_time)
         if return_time:
             ex_selector, sel_time = ex_selector
             logger.log(f'Selector took {sel_time:.2f} seconds')
         fewshot_prompt = fewshot_prompt_fn(example_selector=ex_selector)
+        
     if return_time:
         return fewshot_prompt, sel_time
     else:
@@ -147,6 +243,7 @@ def main(P: AllParams):
     P: AllParams = OmegaConf.to_object(P)
     if P.exp.tiny:
         P.data.n_cands, P.data.n_test = 40, 20
+
     print(P)
     print(P.output_dir)
     os.makedirs(P.output_dir, exist_ok=True)

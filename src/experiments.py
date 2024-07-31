@@ -237,6 +237,7 @@ def main(
     bs_multiplier: int = 1,
     only_1tok: bool = False,
     only_large: bool = True,
+    balance: bool = False
 ):
     """
     Top-level command for running/collating results for batches of experiments.
@@ -280,9 +281,9 @@ def main(
         exp_args = dict(
             label=label, data_root=data_root, output_root=output_root,
             debug=debug, tiny=tiny, only_prompts=only_prompts,
-            batch_size=batch_size, seed=seed) | overrides['exp']
+            batch_size=batch_size, seed=seed, balance=balance) | overrides['exp']
         dataset_args = dataset_args_d.get(dataset, dict()) | dict(
-            prefix=True, n_cands=n_cands, n_test=1000, split=split,
+            prefix=True, n_cands=n_cands, n_test=-1, split=split,
         ) | overrides['data']
         # if lm.startswith('turbo') or lm == 'davinci' or lm == 'davinci-002':
         #     dataset_args['n_test'] = 250

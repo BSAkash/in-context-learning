@@ -41,7 +41,8 @@ class ExperimentParams(Parameters):
     seed: int = 0                       # Random seed.
     gpu: int = 0                        # GPU to use.
     batch_size: Optional[int] = 20      # batch size aggregating ICL results in eval.py
-
+    balance: bool = False               # Whether to use balanced selection of examples
+    
 @attr.s(auto_attribs=True)
 class LLMParams(Parameters):
     """Common class for parameters for all LLM types."""
@@ -127,7 +128,7 @@ class AllParams(Parameters):
     def shorthand(self: AllParams):
         """utility method for easier access"""
         return self.exp, self.data, self.llm, self.selector
-
+    
     @property
     def selector_name(self: AllParams):
         # `get_name`` will be implemented by each selector parameters class in sel2cls
@@ -294,7 +295,6 @@ for selector_type, params_cls in sel2cls.items():
     cs.store(group="selector", name=selector_type, node=params_cls)
 for ds, ds_cls in ds2cls.items():
     cs.store(group="data", name=ds, node=ds_cls)
-
 
 # test whether the AllParams object can be constructed from command-line.
 @hydra.main(version_base=None, config_name="config")

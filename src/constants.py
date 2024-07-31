@@ -120,11 +120,9 @@ class LMType(str, Enum):
 
 class LLM(str, Enum):
     NEO = 'EleutherAI/gpt-neo-2.7B'
-    LLAMA7B = 'llama-7B'
     LLAMA13B = 'llama-13B'
     LLAMA30B = 'llama-30B'
     STARCODER = 'bigcode/starcoder'
-    MISTRAL = 'mistralai/Mistral-7B-v0.1'
     ZEPHYR = 'HuggingFaceH4/zephyr-7b-alpha'
 
     BABBAGE_002 = 'babbage-002'
@@ -133,13 +131,17 @@ class LLM(str, Enum):
     CODE_DAVINCI_002 = 'code-davinci-002'
     TEXT_DAVINCI_002 = 'text-davinci-002'
     TEXT_DAVINCI_003 = 'text-davinci-003'
-    TURBO = 'gpt-3.5-turbo'
     TURBO_JUNE = 'gpt-3.5-turbo-0613'
     GPT4 = 'gpt-4-0314'
     MAJORITY = 'majority'
-    
     DOLLY3B = 'databricks/dolly-v2-3b'
+    
+    LLAMA2_7B = 'llama-7B'
+    LLAMA3_8B = 'meta-llama/Meta-Llama-3-8B'
+    MISTRAL = 'mistralai/Mistral-7B-v0.1'
+    TURBO = 'gpt-3.5-turbo'
     DOLLY7B = 'databricks/dolly-v2-7b'
+    GPT4o_mini = 'gpt-4o-mini'
 
 openai_lms = [LLM.BABBAGE_002, LLM.DAVINCI_002, LLM.CODE_CUSHMAN_001, LLM.CODE_DAVINCI_002, LLM.TEXT_DAVINCI_002, LLM.TEXT_DAVINCI_003, LLM.TURBO, LLM.TURBO_JUNE, LLM.GPT4]
 chat_lms = [LLM.TURBO, LLM.TURBO_JUNE]
@@ -149,22 +151,26 @@ context_length_limit = {
     LLM.CODE_DAVINCI_002: 8001,
     LLM.TEXT_DAVINCI_002: 4096,
     LLM.TEXT_DAVINCI_003: 4096,
-    LLM.TURBO: 16385,
     LLM.TURBO_JUNE: 4000,
     LLM.GPT4: 8192,
 
     LLM.BABBAGE_002: 16384,
     LLM.DAVINCI_002: 16384,
     LLM.NEO: 2048,
-    LLM.LLAMA7B: 2048,
     LLM.LLAMA13B: 2048,
     LLM.STARCODER: 7000,
-    LLM.MISTRAL: 8192,
+    
     LLM.ZEPHYR: 8192,
     LLM.MAJORITY: 100000,
     
     LLM.DOLLY3B: 2048,
+    
+    LLM.TURBO: 16385,
+    LLM.LLAMA2_7B: 4000,
+    LLM.LLAMA3_8B: 8000,
+    LLM.MISTRAL: 8192,
     LLM.DOLLY7B: 2048,
+    LLM.GPT4o_mini: 128000
 }
 
 mwp_datasets = [D.GSM8K]

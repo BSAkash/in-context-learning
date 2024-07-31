@@ -68,6 +68,13 @@ class SelectorUtilsMixin:
                 s = example_template.format(**ex, test=True)
             if s not in unique_examples_idxes:
                 unique_examples_idxes[s] = i
+        #     else:
+        #         print(f"Duplicate found: {s}")
+        #         print(f"Original example: {examples[unique_examples_idxes[s]]}")
+        #         print(f"Duplicate example: {ex}")
+        #         print("---")
+        # print(f"Original count: {len(examples)}, After deduplication: {len(unique_examples_idxes)}")
+    
         return examples.select(list(unique_examples_idxes.values()))
 
     @staticmethod

@@ -38,10 +38,13 @@ def complete_prompts(params, llm, examples, prompts, sep, example_template):
             choices = [example_template.get_choices(**ex) for ex in examples]
             llm_outputs = llm._classify_v3(prompts=prompts, choices=choices)
         else:
-            response = llm.generate(prompts, stop=[sep])
-            llm_outputs = [gen[0].text for gen in response.generations]
+            try:
+                response = llm.generate(prompts, stop=[sep])
+                llm_outputs = [gen[0].text for gen in response.generations]
+            except Exception as e:
+                    print(f"Error during model classification: {e}")
+                    raise e
             # raise NotImplementedError
-
     return llm_outputs
 
 def evaluate_prompt(params, ex, res, prompt, demos, example_template, tokenizer):
@@ -87,18 +90,46 @@ def evaluate_completion(params, ex, res, llm_output, example_template, tokenizer
 
 class MetricsAggregator:
     def __init__(self):
-        self.agg_metrics = {}
+        self.agg_metrics = {'accuracy': 0, 'precision': 0, 'recall': 0, 'f1_score': 0}
+        self.class_metrics = {}
         self.n_total = 0
+        self.n_batches = 0
 
-    def increment(self, ex_metrics):
-        for k, v in ex_metrics.items():
-            self.agg_metrics[k] = self.agg_metrics.get(k, 0) + v
+    def increment_acc(self, acc):
+        """Handle accuracy metric separately."""
+        self.agg_metrics['accuracy'] += acc
         self.n_total += 1
-
+        
+    def increment(self, batch_metrics):
+        """Handle all other metrics."""
+        self.n_batches += 1
+        for k, v in batch_metrics.items():
+            if k != 'accuracy':
+                self.agg_metrics[k] += v
+                
+    def add_class_metrics(self, class_metrics):
+        """Add per-class metrics."""
+        for class_name, metrics in class_metrics.items():
+            if class_name not in self.class_metrics:
+                self.class_metrics[class_name] = {k: 0 for k in metrics}
+            for k, v in metrics.items():
+                self.class_metrics[class_name][k] += v
     @property
     def normalized(self):
-        return {k: v / self.n_total for k, v in self.agg_metrics.items()} | dict(n_total=self.n_total)
-
+        # return {k: v / self.n_total for k, v in self.agg_metrics.items()} | dict(n_total=self.n_total)
+        normalized = {
+            'accuracy': self.agg_metrics['accuracy'] / self.n_total,
+            'precision': self.agg_metrics['precision'] / self.n_batches,
+            'recall': self.agg_metrics['recall'] / self.n_batches,
+            'f1_score': self.agg_metrics['f1_score'] / self.n_batches,
+            'n_total': self.n_total
+        }
+        if self.class_metrics:
+            normalized['class_metrics'] = {
+                class_name: {k: v / self.n_batches for k, v in metrics.items()}
+                for class_name, metrics in self.class_metrics.items()
+            }
+        return normalized
 def eval(
     params: AllParams, test_ds, llm: BaseLLM, prompt_template: FewShotPromptTemplate2,
     sel_time: float, logger: Logger, progress=None, debug=False
@@ -135,26 +166,66 @@ def eval(
             
             # Evaluate prompts and completions
             print("4. Evaluate prompts and completions..")
+            batch_preds, batch_targets = [], []
             for ex, prompt, demos, llm_output in zip(test_batch, prompts, demos_l, llm_outputs):
                 res = deepcopy(ex)
                 prompt_metrics = evaluate_prompt(
-                    params, ex, res, prompt, demos, example_template, tokenizer)
+                     params, ex, res, prompt, demos, example_template, tokenizer)
                 eval_metrics = evaluate_completion(
                     params, ex, res, llm_output, example_template, tokenizer)
-
+                batch_preds.append(res['pred'])
+                batch_targets.append(res['_target'])
                 # Aggregate Resutls
                 res['metrics'] = prompt_metrics | eval_metrics
+                # res['metrics'] = eval_metrics
                 results.append(res)
-                agg_metrics.increment(res['metrics'])
+                agg_metrics.increment_acc(res['metrics']['accuracy'])
+                
 
                 if debug:
                     comp_color = 'blue' if 'accuracy' in res['metrics'] and res['metrics']['accuracy'] else 'red'
                     log('Prompt and Completion:')
                     log(f"[green]{res['prompt']}[/green][{comp_color}]{res['completion']}[/{comp_color}]")
                     log(f'Inputs: {ex}')
+            # Add other metrics
+            from sklearn.metrics import precision_score, recall_score, f1_score, confusion_matrix
+            pos_class = 'Harmful'
+            precision = precision_score(batch_targets, batch_preds, average='binary', zero_division=0, pos_label=pos_class)
+            recall = recall_score(batch_targets, batch_preds, average='binary', zero_division=0, pos_label=pos_class)
+            f1 = f1_score(batch_targets, batch_preds, average='binary', zero_division=0, pos_label=pos_class)
+            other_metrics = {
+                'precision': precision * 100,
+                'recall': recall * 100,
+                'f1_score': f1 * 100
+            }
+            agg_metrics.increment(other_metrics)
+            
+            # Calculate per-class metrics
+            class_names = ['Harmful', 'Harmless']
+            class_precision = precision_score(batch_targets, batch_preds, average=None, zero_division=0, labels=class_names)
+            class_recall = recall_score(batch_targets, batch_preds, average=None, zero_division=0, labels=class_names)
+            class_f1 = f1_score(batch_targets, batch_preds, average=None, zero_division=0, labels=class_names)
+
+            class_metrics = {
+                class_name: {
+                    'precision': class_precision[i] * 100,
+                    'recall': class_recall[i] * 100,
+                    'f1_score': class_f1[i] * 100
+                } for i, class_name in enumerate(class_names)
+            }
+            agg_metrics.add_class_metrics(class_metrics)
+            """
+            cm = confusion_matrix(batch_targets, batch_preds)
+            print("\nConfusion Matrix:")
+            print(cm)
+            print("\nDetailed Confusion Matrix:")
+            print("                 Predicted")
+            print("                 Harmless  Harmful")
+            print("Actual  Harmless  {:8d}  {:7d}".format(cm[0][0], cm[0][1]))
+            print("        Harmful   {:8d}  {:7d}".format(cm[1][0], cm[1][1]))
+            """
+
             log(str(agg_metrics.normalized))
-            # Rate limit
-            # time.sleep(30)
             
     log(ex)
     log(prompt)
@@ -163,6 +234,7 @@ def eval(
     metrics = agg_metrics.normalized | time_metrics
     log(str(metrics))
     data = dict(results=results, metrics=metrics)
+    print(f"param: {params}")
     print(f"Saving results to {params.resultsfile} ..")
     json.dump(data, open(params.resultsfile, 'w'), indent=2, separators=(',', ': '))
     return data
