@@ -278,6 +278,10 @@ class AllParams(Parameters):
                 presence_penalty=LP.presence_penalty,
                 **generation_kwargs,)
         elif LP.lm_type == P.HUGGINGFACE:   # for huggingface LLMs like Neo, LLaMA, Starcoder.
+            # if LP.lm_name.value == 'llama-7B':
+            #     from transformers import AutoModelForCausalLM
+            #     model = AutoModelForCausalLM.from_pretrained("/home/lucenl/llama/llama2-huggingface")
+            #     return model
             from langchain.llms.huggingface import HuggingFace
             generation_kwargs['max_new_tokens'] = generation_kwargs.pop('max_tokens')
             return HuggingFace.from_model_name(

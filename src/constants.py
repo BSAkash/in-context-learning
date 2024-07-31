@@ -136,15 +136,15 @@ class LLM(str, Enum):
     MAJORITY = 'majority'
     DOLLY3B = 'databricks/dolly-v2-3b'
     
-    LLAMA2_7B = 'llama-7B'
+    LLAMA_7B = 'llama-7B'
     LLAMA3_8B = 'meta-llama/Meta-Llama-3-8B'
     MISTRAL = 'mistralai/Mistral-7B-v0.1'
     TURBO = 'gpt-3.5-turbo'
     DOLLY7B = 'databricks/dolly-v2-7b'
     GPT4o_mini = 'gpt-4o-mini'
 
-openai_lms = [LLM.BABBAGE_002, LLM.DAVINCI_002, LLM.CODE_CUSHMAN_001, LLM.CODE_DAVINCI_002, LLM.TEXT_DAVINCI_002, LLM.TEXT_DAVINCI_003, LLM.TURBO, LLM.TURBO_JUNE, LLM.GPT4]
-chat_lms = [LLM.TURBO, LLM.TURBO_JUNE]
+openai_lms = [LLM.BABBAGE_002, LLM.DAVINCI_002, LLM.CODE_CUSHMAN_001, LLM.CODE_DAVINCI_002, LLM.TEXT_DAVINCI_002, LLM.TEXT_DAVINCI_003, LLM.TURBO, LLM.TURBO_JUNE, LLM.GPT4, LLM.GPT4o_mini]
+chat_lms = [LLM.TURBO, LLM.TURBO_JUNE, LLM.GPT4o_mini, LLM.LLAMA_7B]
 
 context_length_limit = {
     LLM.CODE_CUSHMAN_001: 2048,
@@ -166,7 +166,7 @@ context_length_limit = {
     LLM.DOLLY3B: 2048,
     
     LLM.TURBO: 16385,
-    LLM.LLAMA2_7B: 4000,
+    LLM.LLAMA_7B: 4000,
     LLM.LLAMA3_8B: 8000,
     LLM.MISTRAL: 8192,
     LLM.DOLLY7B: 2048,

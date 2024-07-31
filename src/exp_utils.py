@@ -39,8 +39,8 @@ lm_args_d = {
     #     lm_name=LLM.NEOX20B, lm_type=P.HUGGINGFACE, do_sample=False, lm_batch_size=2,),
     'neo': dict(
         lm_name=LLM.NEO, lm_type=P.HUGGINGFACE, do_sample=False, lm_batch_size=10,),
-    'llama2-7B': dict(
-        lm_name=LLM.LLAMA2_7B, lm_type=P.HUGGINGFACE, do_sample=False, lm_batch_size=7,),
+    'llama-7B': dict(
+        lm_name=LLM.LLAMA_7B, lm_type=P.HUGGINGFACE, do_sample=False, lm_batch_size=7,),
     'llama3-8B': dict(
         lm_name=LLM.LLAMA3_8B, lm_type=P.HUGGINGFACE, do_sample=False, lm_batch_size=7,),
     'llama-13B': dict(
@@ -56,7 +56,7 @@ lm_args_d = {
     'dolly7b': dict(
         lm_name=LLM.DOLLY7B, lm_type=P.HUGGINGFACE, do_sample=False, lm_batch_size=7,),
     '4o-mini': dict(
-        lm_name=LLM.TURBO, lm_type=P.OPENAI_CHAT, lm_url=None,
+        lm_name=LLM.GPT4o_mini, lm_type=P.OPENAI_CHAT, lm_url=None,
         lm_batch_size=1, lm_delay=10,)
     
 }

@@ -277,3 +277,4 @@ extensions.sh
 outputs/
 README-orig.md
 .git.bak/
+*.jsonl

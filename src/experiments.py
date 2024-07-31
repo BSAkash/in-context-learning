@@ -271,9 +271,9 @@ def main(
         seed, dataset, split, lm, selector, n_cands=-1, batch_sizes=None, selector_args={}):
         lmds2bs = defaultdict(lambda: None, {})
         if dataset not in [D.YELP, D.PIQA, D.RTE, D.AESLC, D.AGNEWS, D.DART, D.DROP, D.BOOLQ]:
-            lm2bs = defaultdict(lambda: '28;7', {'neo': '24;6', 'davinci': '80;20', 'llama-7B': '24;2', 'mistral': '24;2', 'zephyr': '24;2', 'llama-13B': '24;1', 'starcoder': '24;1', 'turbo': '24;1', 'turbo-june': '24;1'})
+            lm2bs = defaultdict(lambda: '28;7', {'neo': '24;6', 'davinci': '80;20', 'llama-7B': '24;2', 'mistral': '24;2', 'zephyr': '24;2', 'llama-13B': '24;1', 'starcoder': '24;1', 'turbo': '24;1', 'turbo-june': '24;1', '4o-mini': '24;1'})
         else:
-            lm2bs = defaultdict(lambda: '28;7', {'neo': '20;4', 'davinci': '80;10', 'llama-7B': '24;1', 'mistral': '24;1', 'zephyr': '24;1', 'llama-13B': '24;1', 'starcoder': '24;1', 'turbo': '24;1', 'turbo-june': '24;1'})
+            lm2bs = defaultdict(lambda: '28;7', {'neo': '20;4', 'davinci': '80;10', 'llama-7B': '24;1', 'mistral': '24;1', 'zephyr': '24;1', 'llama-13B': '24;1', 'starcoder': '24;1', 'turbo': '24;1', 'turbo-june': '24;1', '4o-mini': '24;1'})
         batch_sizes = batch_sizes or lmds2bs[(lm, dataset)] or lm2bs[lm]
         batch_size, lm_batch_size = get_ints(batch_sizes)
         lm_batch_size *= bs_multiplier
