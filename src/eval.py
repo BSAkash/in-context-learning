@@ -39,8 +39,25 @@ def complete_prompts(params, llm, examples, prompts, sep, example_template):
             llm_outputs = llm._classify_v3(prompts=prompts, choices=choices)
         else:
             try:
-                response = llm.generate(prompts, stop=[sep])
-                llm_outputs = [gen[0].text for gen in response.generations]
+                if params.lm_name == 'llama-7B':
+                    if isinstance(prompts, tuple):
+                        prompts = prompts[0]
+                    
+                    for dialog in prompts:
+                        if dialog:
+                            print(f'change: {dialog[0]["role"]}')
+                            dialog[0]['role'] = 'system'
+                    
+                    response = llm.chat_completion(
+                        dialogs=prompts,
+                        max_gen_len=512,
+                        temperature=0.6,
+                        top_p=0.9,
+                    )
+                    llm_outputs = [re['generation']['content'] for re in response]
+                else:
+                    response = llm.generate(prompts, stop=[sep])
+                    llm_outputs = [gen[0].text for gen in response.generations]
             except Exception as e:
                     print(f"Error during model classification: {e}")
                     raise e

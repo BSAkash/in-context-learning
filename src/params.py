@@ -278,10 +278,14 @@ class AllParams(Parameters):
                 presence_penalty=LP.presence_penalty,
                 **generation_kwargs,)
         elif LP.lm_type == P.HUGGINGFACE:   # for huggingface LLMs like Neo, LLaMA, Starcoder.
-            # if LP.lm_name.value == 'llama-7B':
-            #     from transformers import AutoModelForCausalLM
-            #     model = AutoModelForCausalLM.from_pretrained("/home/lucenl/llama/llama2-huggingface")
-            #     return model
+            if LP.lm_name.value == 'llama-7B':
+                from llama import Llama
+                return Llama.build(
+                    ckpt_dir='/home/lucenl/llama/llama-2-7b-chat/',
+                    tokenizer_path='/home/lucenl/llama/llama-2-7b-chat/tokenizer.model',
+                    max_seq_len=512,
+                    max_batch_size=8,
+                )
             from langchain.llms.huggingface import HuggingFace
             generation_kwargs['max_new_tokens'] = generation_kwargs.pop('max_tokens')
             return HuggingFace.from_model_name(
