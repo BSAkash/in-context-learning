@@ -30,6 +30,8 @@ class Dataset(str, Enum):
     CFQ = 'cfq'
     SPIDER = 'spider'
     BREAK = 'break'
+    E2ENLG = 'e2enlg'
+    COMMONGEN = 'commongen'
     MTOP = 'mtop'
 
     # NLI

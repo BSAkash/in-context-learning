@@ -40,13 +40,13 @@ def complete_prompts(params, llm, examples, prompts, sep, example_template):
         else:
             try:
                 if params.lm_name == 'llama-7B':
-                    if isinstance(prompts, tuple):
-                        prompts = prompts[0]
                     
                     for dialog in prompts:
-                        if dialog:
-                            print(f'change: {dialog[0]["role"]}')
-                            dialog[0]['role'] = 'system'
+                        #print(f'dialog: {dialog}')
+                        # for msg in dialog:
+                        #     print(f"  {msg}")
+                        dialog[0]['role'] = 'system'
+                        print(f'dialog: {dialog}')
                     
                     response = llm.chat_completion(
                         dialogs=prompts,
@@ -82,9 +82,11 @@ def evaluate_prompt(params, ex, res, prompt, demos, example_template, tokenizer)
         prompt_metrics['majority_precision'] = 100 * np.mean(
             [t == res['_target'] for t in demo_targets])
     orig_prompt = prompt
+    """ remove for test llama
     if tokenizer:
         res['orig_prompt'] = orig_prompt
         prompt = tokenizer.decode(tokenizer.encode(prompt), skip_special_tokens=True)
+    """
     res['prompt'] = prompt
     return prompt_metrics
 
@@ -198,18 +200,19 @@ def eval(
                 results.append(res)
                 agg_metrics.increment_acc(res['metrics']['accuracy'])
                 
-
                 if debug:
                     comp_color = 'blue' if 'accuracy' in res['metrics'] and res['metrics']['accuracy'] else 'red'
                     log('Prompt and Completion:')
                     log(f"[green]{res['prompt']}[/green][{comp_color}]{res['completion']}[/{comp_color}]")
                     log(f'Inputs: {ex}')
+            
+            # TODO: check LLAMA output
+            print(f"predictions: {batch_preds}")
             # Add other metrics
             from sklearn.metrics import precision_score, recall_score, f1_score, confusion_matrix
-            pos_class = 'Harmful'
-            precision = precision_score(batch_targets, batch_preds, average='binary', zero_division=0, pos_label=pos_class)
-            recall = recall_score(batch_targets, batch_preds, average='binary', zero_division=0, pos_label=pos_class)
-            f1 = f1_score(batch_targets, batch_preds, average='binary', zero_division=0, pos_label=pos_class)
+            precision = precision_score(batch_targets, batch_preds, average='micro', zero_division=0)
+            recall = recall_score(batch_targets, batch_preds, average='micro', zero_division=0)
+            f1 = f1_score(batch_targets, batch_preds, average='micro', zero_division=0)
             other_metrics = {
                 'precision': precision * 100,
                 'recall': recall * 100,
