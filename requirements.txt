@@ -27,7 +27,7 @@ seaborn==0.13.2
 simple-parsing==0.1.4
 spacy==3.7.2
 stanza==1.7.0
-tiktoken==0.5.1
+tiktoken==0.7.0
 # torch==2.1.0+cu118
 tqdm==4.66.1
 transformers==4.35.2
