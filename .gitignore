@@ -264,11 +264,10 @@ saved_models/
 venv/
 checkpoints/
 results/
-data/
 !src/data
 src/selector/archive
-openai_keys.txt
 docs
+openai_keys.txt
 src/scratch
 src/third_party
 src/archive
