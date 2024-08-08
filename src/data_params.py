@@ -614,12 +614,12 @@ class YouTube(DataParams):
             choices = ["Harmful", "Harmless"],
             get_target = lambda _choices, **kwargs: kwargs['label'],
             # templates = 'Title: {Title}\nDescription: {Description}\nTranscript: {Transcript}\nClassification: {_target}')
-            templates = 'Title: {Title}\nCaption: {caption}\nClassification: {_target}')
+            templates = 'Classification: {_target}')
         
         T.instructed_example_template = ClassificationTemplate(
             choices = ["Harmful", "Harmless"],
             get_target = lambda _choices, **kwargs: kwargs['label'],
-            templates='Review the following video metadata:\nTitle: {Title}\nCaption: {caption}\nIs the video above Harmful or Harmless?\nAnswer: {_target}')
+            templates='Is the video Harmful or Harmless?\nAnswer: {_target}')
         T.selection_example_template = T.instructed_example_template
         return T
 
