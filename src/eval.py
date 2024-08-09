@@ -19,6 +19,34 @@ from constants import mwp_datasets, LLM, Dataset as D, chat_lms
 from prompts.base import ExampleTemplate
 from prompts.few_shot import FewShotPromptTemplate2
 
+def llama_v2_prompt(dialog):
+    B_INST, E_INST = "[INST]", "[/INST]"
+    B_SYS, E_SYS = "<<SYS>>\n", "\n<</SYS>>\n\n"
+    BOS, EOS = "<s>", "</s>"
+    DEFAULT_SYSTEM_PROMPT = f"""Your task is to classify YouTube videos as Harmful or Harmless based on their metadata."""
+
+    if dialog[0]["role"] != "system":
+        dialog = [
+            {
+                "role": "system",
+                "content": DEFAULT_SYSTEM_PROMPT,
+            }
+        ] + dialog
+    dialog = [
+        {
+            "role": dialog[1]["role"],
+            "content": B_SYS + dialog[0]["content"] + E_SYS + dialog[1]["content"],
+        }
+    ] + dialog[2:]
+
+    messages_list = [
+        f"{BOS}{B_INST} {(prompt['content']).strip()} {E_INST} {(answer['content']).strip()} {EOS}"
+        for prompt, answer in zip(dialog[::2], dialog[1::2])
+    ]
+    messages_list.append(f"{BOS}{B_INST} {(dialog[-1]['content']).strip()} {E_INST}")
+
+    return "".join(messages_list)
+
 def complete_prompts(params, llm, examples, prompts, sep, example_template):
     is_classification = hasattr(example_template, 'get_choices')
     if not is_classification:    # generation
@@ -35,29 +63,40 @@ def complete_prompts(params, llm, examples, prompts, sep, example_template):
             # llm_outputs = [gen[0].text for gen in response.generations]
     else:   # classification
         if params.lm_name not in chat_lms:
+            # print(f"prompts: {prompts}")
             choices = [example_template.get_choices(**ex) for ex in examples]
             llm_outputs = llm._classify_v3(prompts=prompts, choices=choices)
         else:
             try:
-                if params.lm_name == 'llama-7B':
-                    
+                if params.lm_name == 'llama-13B':
+                    prompt_list = []
                     for dialog in prompts:
                         #print(f'dialog: {dialog}')
                         # for msg in dialog:
                         #     print(f"  {msg}")
                         dialog[0]['role'] = 'system'
-                        print(f'dialog: {dialog}')
-                    
+                        # print(f'dialog: {dialog}')
+                        llama_prompt = llama_v2_prompt(dialog)
+                        # print(f"llama_prompt: {llama_prompt}")
+                        prompt_list.append(llama_prompt)
+                    """ This is Llama method
                     response = llm.chat_completion(
                         dialogs=prompts,
                         max_gen_len=512,
                         temperature=0.6,
                         top_p=0.9,
                     )
-                    llm_outputs = [re['generation']['content'] for re in response]
+                    llm_outputs = [re['generation']['content'] for re in response]"""
+                    # print(f"prompts:{prompt_list}")
+                    # choices = [example_template.get_choices(**ex) for ex in examples]
+                    # llm_outputs = llm._classify_v3(prompts=prompt_list, choices=choices)
+                    response = llm.generate(prompt_list, stop=[sep])
+                    llm_outputs = [gen[0].text for gen in response.generations]
                 else:
+                    # print(f"prompts:{prompts}")
                     response = llm.generate(prompts, stop=[sep])
                     llm_outputs = [gen[0].text for gen in response.generations]
+                print(f"llm_output: {llm_outputs}")
             except Exception as e:
                     print(f"Error during model classification: {e}")
                     raise e
@@ -188,15 +227,15 @@ def eval(
             batch_preds, batch_targets = [], []
             for ex, prompt, demos, llm_output in zip(test_batch, prompts, demos_l, llm_outputs):
                 res = deepcopy(ex)
-                prompt_metrics = evaluate_prompt(
-                     params, ex, res, prompt, demos, example_template, tokenizer)
+                # prompt_metrics = evaluate_prompt(
+                #      params, ex, res, prompt, demos, example_template, tokenizer)
                 eval_metrics = evaluate_completion(
                     params, ex, res, llm_output, example_template, tokenizer)
                 batch_preds.append(res['pred'])
                 batch_targets.append(res['_target'])
                 # Aggregate Resutls
-                res['metrics'] = prompt_metrics | eval_metrics
-                # res['metrics'] = eval_metrics
+                # res['metrics'] = prompt_metrics | eval_metrics
+                res['metrics'] = eval_metrics
                 results.append(res)
                 agg_metrics.increment_acc(res['metrics']['accuracy'])
                 
@@ -209,10 +248,11 @@ def eval(
             # TODO: check LLAMA output
             print(f"predictions: {batch_preds}")
             # Add other metrics
-            from sklearn.metrics import precision_score, recall_score, f1_score, confusion_matrix
-            precision = precision_score(batch_targets, batch_preds, average='micro', zero_division=0)
-            recall = recall_score(batch_targets, batch_preds, average='micro', zero_division=0)
-            f1 = f1_score(batch_targets, batch_preds, average='micro', zero_division=0)
+            from sklearn.metrics import precision_score, recall_score, f1_score, precision_recall_fscore_support
+            # precision = precision_score(batch_targets, batch_preds, average='binary', pos_label='Harmful', zero_division=0)
+            # recall = recall_score(batch_targets, batch_preds, average='binary', pos_label='Harmful', zero_division=0)
+            # f1 = f1_score(batch_targets, batch_preds, average='binary', pos_label='Harmful', zero_division=0)
+            precision, recall, f1, _ = precision_recall_fscore_support(batch_targets, batch_preds, average='macro')
             other_metrics = {
                 'precision': precision * 100,
                 'recall': recall * 100,
